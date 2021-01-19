@@ -2,14 +2,21 @@
 
 datadir=/dilithium/Data/Nanopore/sindbis
 
+##raw=210105_sindbis
+##samp=mAbdpi1
+##raw=210107_sindbis
+##samp=mAbdpi2
+##raw=210112_sindbis
+##samp=sinvdpi3
+
+##raw=210114_sindbis
+##samp=sinvdpi2
+
+raw=210116_sindbis
+samp=sinvdpi1
+
+
 if [ $1 == org ] ; then
-
-    ##raw=210105_sindbis
-    ##samp=mAbdpi1
-
-    raw=210107_sindbis
-    samp=mAbdpi2
-    
     for i in rep1 rep2 rep3 ;
     do
 	prefix=${samp}_$i
@@ -32,9 +39,6 @@ fi
 
 	
 if [ $1 == grab_misc ] ; then
-    raw=210105_sindbis
-    samp=mAbdpi1
-
     for i in rep1 rep2 rep3 ;
     do
 	prefix=${samp}_$i

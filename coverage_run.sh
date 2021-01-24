@@ -37,3 +37,22 @@ if [ $1 == set4 ] ; then
 	bash $srcdir/coverage.sh genomecov $i
     done
 fi
+
+if [ $1 == set5 ] ; then
+    for i in sinvdpi1_rep1 sinvdpi1_rep2 sinvdpi1_rep3 ;
+    do
+	bash $srcdir/coverage.sh align $i
+	bash $srcdir/coverage.sh cov $i
+	bash $srcdir/coverage.sh genomecov $i
+    done
+fi
+
+if [ $1 == set6 ] ; then
+    for i in mAbdpi3_rep1 mAbdpi3_rep2 mAbdpi3_rep3 ;
+    do
+	bash $srcdir/coverage.sh align $i
+	bash $srcdir/coverage.sh cov $i
+	bash $srcdir/coverage.sh genomecov $i
+    done
+fi
+	

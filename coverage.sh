@@ -42,10 +42,4 @@ if [ $1 == genomecov ] ; then
     bedtools genomecov -d -ibam $datadir/$i/align/$i.primary.sorted.bam > $datadir/$i/cov/$i.primary.genomecov
 fi
 
-if [ $1 == test ] ; then
-    for i in $datadir/* ;
-    do
-	name=`basename $i`
-	echo $name
-    done
-fi
+

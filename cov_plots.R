@@ -1,4 +1,5 @@
 library(tidyverse)
+library(RColorBrewer)
 
 datadir='/dilithium/Data/Nanopore/sindbis/replicates'
 dbxdir='~/Dropbox/timplab_data/sindbis/replicates/cov'
@@ -47,12 +48,29 @@ for (i in unique(covnorm$cond)) {
         ggtitle(i) +
         xlab('Position') +
         ylab('Normalized Coverage') +
-        scale_fill_brewer(palette = "Set2") +
+        scale_colour_brewer(palette = "Set2") +
         theme_bw()
     print(plot)
 }
 dev.off()
 
+meancov=covnorm %>%
+    group_by(cond, dpi, pos) %>%
+    summarise(avg_sumnorm=mean(sum_norm)) %>%
+    rowwise() %>%
+    mutate(status=str_split(cond, 'dpi')[[1]][1]) %>%
+    mutate(dpi=as.character(dpi))
+
+avgcovplotfile=file.path(dbxdir, 'avg_coverage.pdf')
+pdf(avgcovplotfile, w=16, h=9)
+plot=ggplot(meancov, aes(x=pos, y=avg_sumnorm, colour=dpi, linetype=status)) +
+    geom_line() +
+    ggtitle('Replicate Averages') +
+    ylab('Normalized Coverage') +
+    scale_colour_brewer(palette = 'Set2') +
+    theme_bw()
+print(plot)
+dev.off()
 
 
 gencov_cnames=c('chr','pos','cov')

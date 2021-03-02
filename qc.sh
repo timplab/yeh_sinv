@@ -17,3 +17,13 @@ if [ $1 == set1_runsum ] ; then
 fi
 
 	
+if [ $1 == count_reads ] ; then
+    echo samp,numreads >> $dbxdir/qc/readcounts.csv
+    linesperread=4
+    for samp in $datadir/replicates/* ;
+    do
+	i=`basename $samp`
+	numlines=`zcat $samp/fqs/$i.fq.gz | wc -l `
+	echo $i,$((numlines / linesperread)) >> $dbxdir/qc/readcounts.csv
+    done
+fi

@@ -5,7 +5,7 @@ datadir=/dilithium/Data/Nanopore/sindbis
 if [ $1 == untar ] ; then
     mkdir -p ~/data/sindbis
     mkdir -p ~/data/sindbis/raw
-    for i in $datadir/raw/18*.tar.gz ;
+    for i in $datadir/raw/18*TE*.tar.gz ;
     do
 	( prefix=`basename $i .tar.gz | cut -d _ -f 2-`
 	mkdir -p ~/data/sindbis/raw/$prefix
@@ -15,7 +15,7 @@ fi
 
 if [ $1 == multi ] ; then
     mkdir -p ~/data/sindbis/multiraw
-    for i in $datadir/raw/18*.tar.gz ;
+    for i in $datadir/raw/18*TE*.tar.gz ;
     do
 	prefix=`basename $i .tar.gz | cut -d _ -f 2-`
 	mkdir -p ~/data/sindbis/multiraw/$prefix
@@ -31,7 +31,7 @@ fi
 
 if [ $1 == call ] ; then
     mkdir -p ~/data/sindbis/called
-    for i in $datadir/raw/18*.tar.gz ;
+    for i in $datadir/raw/18*TE*.tar.gz ;
     do
 	prefix=`basename $i .tar.gz | cut -d _ -f 2-`
 	mkdir -p ~/data/sindbis/called/$prefix
@@ -48,7 +48,7 @@ fi
 
 if [ $1 == gather ] ; then
     mkdir -p ~/data/sindbis/fqs
-    for i in $datadir/raw/18*.tar.gz ;
+    for i in $datadir/raw/18*TE*.tar.gz ;
     do
 	( prefix=`basename $i .tar.gz | cut -d _ -f 2-`
 	  mkdir -p ~/data/sindbis/fqs/$prefix
@@ -59,7 +59,7 @@ fi
 if [ $1 == call_singlefast5 ] ; then
     ##saw some weird error messages when converting to multifast5 checking single fast5 too
     mkdir -p ~/data/sindbis/called_single
-    for i in $datadir/raw/18*.tar.gz ;
+    for i in $datadir/raw/18*TE*.tar.gz ;
     do
 	prefix=`basename $i .tar.gz | cut -d _ -f 2-`
 	mkdir -p ~/data/sindbis/called_single/$prefix
@@ -75,7 +75,7 @@ if [ $1 == call_singlefast5 ] ; then
 fi
 
 if [ $1 == gather_singlefast5 ] ; then
-    for i in $datadir/raw/18*.tar.gz ;
+    for i in $datadir/raw/18*TE*.tar.gz ;
     do
 	( prefix=`basename $i .tar.gz | cut -d _ -f 2-`
 	  cat ~/data/sindbis/called_single/$prefix/*fastq.gz > ~/data/sindbis/fqs/$prefix/${prefix}.fq.gz ) &
@@ -83,7 +83,7 @@ if [ $1 == gather_singlefast5 ] ; then
 fi
 
 if [ $1 == copy ] ; then
-    for i in $datadir/raw/18*.tar.gz ;
+    for i in $datadir/raw/18*TE*.tar.gz ;
     do
 	( prefix=`basename $i .tar.gz | cut -d _ -f 2-`
 	  mkdir -p $datadir/singlet/$prefix/fqs

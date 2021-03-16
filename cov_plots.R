@@ -115,3 +115,53 @@ for (i in unique(gencovnorm$cond)) {
     print(plot)
 }
 dev.off()
+
+
+##annotation
+gff=paste0('/dilithium/Data/Nanopore/sindbis/annot_regions.tsv')
+regions=read_tsv(gff, col_names=c('prot', 'start', 'end')) %>%
+    mutate(colors=brewer.pal(9, 'Set3'))
+
+library(ggnewscale)
+##make figure
+plotcov <- function(covinfo, regions) {
+    ##takes in covnorm like object
+    ##making colours work: https://stackoverflow.com/questions/58976114/how-do-i-have-multiple-lines-of-the-same-color-with-gg-plot
+    mapping=covinfo %>% distinct(cond,samp)
+    cols=brewer.pal(6, 'Set2')
+    cols=cols[1:n_distinct(mapping$cond)]
+    names(cols)=unique(mapping$cond)
+    plotcols=cols[mapping$cond]
+    names(plotcols)=mapping$samp
+
+    barheight=-.07*max(covinfo$sum_norm)
+    regions$ymin=barheight
+    regions$ymax=0+.2*barheight
+    values=regions$colors
+    names(values)=regions$prot
+    
+    title=as.character(covinfo$dpi[1])
+    plot=ggplot(covinfo, mapping=aes(x=pos, y=sum_norm, col=samp)) +
+        geom_line(size=1) +
+        ggtitle(paste0('Days post infection: ', title)) +
+        xlab('Position') +
+        ylab('Normalized Coverage') +
+        scale_colour_manual(values = plotcols) +
+        new_scale_color() +
+        geom_rect(data=regions, inherit.aes=FALSE, aes(xmin=start, xmax=end, ymin=ymin, ymax=ymax, fill=prot), alpha=.3) +
+        geom_text(data=regions, inherit.aes=FALSE, aes(x=start+(end-start)/2, y=ymin+(ymax-ymin)/2, label=prot, size=.2)) +
+        scale_fill_manual(values=regions$colors, labels=regions$prot) +
+        theme_bw()
+    return(plot)
+}
+
+cov1=plotcov(covnorm %>% filter(dpi==1), regions)
+cov2=plotcov(covnorm %>% filter(dpi==2), regions)
+cov3=plotcov(covnorm %>% filter(dpi==3), regions)
+
+
+library(cowplot)
+covplotpdf=file.path(dbxdir, 'coverage_fig.pdf')
+pdf(covplotpdf, h=18, w=14)
+plot_grid(cov1, cov2, cov3, ncol=1, align='v')
+dev.off()

@@ -8,6 +8,13 @@ sampinfo=tibble(condition=c(rep('mAb', 9), rep('sinv',9), 'mock'),
                 dpi=c(rep(1,3), rep(2,3), rep(3,3), rep(1,3), rep(2,3), rep(3,3), 0),
                 rep=c(rep(c(1,2,3), 6), 0))
 
+
+##get in read count info
+aligncountscsv=file.path(dbxdir,'align_counts.csv')
+aligncounts=read_csv(aligncountscsv) %>%
+    mutate(sinv=total-notsinv)
+
+
 ##read in coverage info
 cov_cnames=c('chr','start', 'end','pos','cov')
 cov=tibble(chr=as.character(),
@@ -38,7 +45,9 @@ for (i in 1:dim(sampinfo)[1]) {
 covnorm=cov %>%
     group_by(samp) %>%
     mutate(sum_norm=cov/sum(cov)) %>%
-    mutate(max_norm=cov/max(cov))
+    mutate(max_norm=cov/max(cov)) %>%
+    rowwise() %>%
+    mutate(num_norm=cov/aligncounts$sinv[aligncounts$samp==samp])
 
 covplotfile=file.path(dbxdir, 'coverage.pdf')
 pdf(covplotfile, w=16, h=9)
@@ -97,6 +106,9 @@ for (i in 1:dim(sampinfo)[1]) {
     }
 }
 
+
+
+##plots with genome coverage - means deletions are marked with lower cov. 
 gencovnorm=gencov %>%
     group_by(samp) %>%
     mutate(sum_norm=cov/sum(cov)) %>%
@@ -134,14 +146,16 @@ plotcov <- function(covinfo, regions) {
     plotcols=cols[mapping$cond]
     names(plotcols)=mapping$samp
 
-    barheight=-.07*max(covinfo$sum_norm)
+    ##barheight=-.07*max(covinfo$sum_norm)
+    barheight=-.07*max(covinfo$num_norm)
     regions$ymin=barheight
     regions$ymax=0+.2*barheight
     values=regions$colors
     names(values)=regions$prot
     
     title=as.character(covinfo$dpi[1])
-    plot=ggplot(covinfo, mapping=aes(x=pos, y=sum_norm, col=samp)) +
+    ##plot=ggplot(covinfo, mapping=aes(x=pos, y=sum_norm, col=samp)) +
+    plot=ggplot(covinfo, mapping=aes(x=pos, y=num_norm, col=samp)) +
         geom_line(size=1) +
         ggtitle(paste0('Days post infection: ', title)) +
         xlab('Position') +
@@ -165,3 +179,9 @@ covplotpdf=file.path(dbxdir, 'coverage_fig.pdf')
 pdf(covplotpdf, h=18, w=14)
 plot_grid(cov1, cov2, cov3, ncol=1, align='v')
 dev.off()
+
+covplotpdf_num=file.path(dbxdir, 'coverage_fig_num.pdf')
+pdf(covplotpdf_num, h=19, w=16)
+plot_grid(cov1, cov2, cov3, ncol=1, align='v')
+dev.off()
+

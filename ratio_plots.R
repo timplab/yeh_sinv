@@ -4,10 +4,16 @@ library(cowplot)
 dbxdir='~/Dropbox/timplab_data/sindbis/replicates'
 
 aligncountscsv=file.path(dbxdir, 'cov','align_counts.csv')
+aligninfo=read_csv(aligncountscsv)
+
 aligncounts=read_csv(aligncountscsv) %>%
+    mutate(sinv=total-notsinv) %>%
+    mutate(rat=total-notrat) %>%
     mutate(persinv=sinv/(sinv+rat)) %>%
     mutate(perrat=rat/(sinv+rat)) %>%
-    select(-sinv, -rat) %>%
+    mutate(pertotsinv=sinv/total) %>%
+    mutate(pertotsrat=rat/total) #%>%
+    select(-sinv, -rat, -notrat, -notsinv, -total) %>%
     gather('species', 'value', -samp) %>%
     rowwise() %>%
     mutate(group=str_split(samp, '_')[[1]][1]) %>%
@@ -27,7 +33,7 @@ pointcounts=aligncounts %>%
     filter(species=='persinv')
 aligncountpointspdf=file.path(dbxdir, 'cov', 'align_counts_points.pdf')
 pdf(aligncountpointspdf, h=9, w=11)
-ggplot(pointcounts, aes(x=group, y=value, colour=species, fill=species, alpha=.7)) +
+ggplot(pointcounts, aes(x=group, y=value, colour=species, fill=species, alpha=.3)) +
     geom_point(size=5) +
     ggtitle('Read Ratios') +
     scale_fill_brewer(palette='Set2') +

@@ -42,13 +42,20 @@ if [ $1 == genomecov ] ; then
 fi
 
 if [ $1 == count ] ; then
-    echo samp,sinv,rat,total >> $dbxdir/cov/align_counts.csv
+    echo samp,notsinv,notrat,total >> $dbxdir/cov/align_counts.csv
     for samp in $datadir/* ;
     do
 	i=`basename $samp`
-	sinv=`samtools view -c -F 260 $samp/align/$i.primary.sorted.bam`
-	rat=`samtools view -c -F 260 $samp/align/$i.rat.primary.sorted.bam`
-	total=`zcat $samp/fqs/$i.fq.gz | wc -l`
-	echo $i,$sinv,$rat >> $dbxdir/cov/align_counts.csv
+
+	##count reads that did not align
+	notsinv=`samtools view -c -f 4 $samp/align/$i.sorted.bam`
+	notrat=`samtools view -c -f 4 $samp/align/$i.rat.sorted.bam`
+
+	
+	fqlines=`zcat $samp/fqs/$i.fq.gz | wc -l`
+	fqdiv=4
+	total=`echo $((fqlines / fqdiv))`
+	
+	echo $i,$notsinv,$notrat,$total >> $dbxdir/cov/align_counts.csv
     done
 fi

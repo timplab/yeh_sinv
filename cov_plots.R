@@ -129,6 +129,9 @@ for (i in unique(gencovnorm$cond)) {
 dev.off()
 
 
+
+
+
 ##annotation
 gff=paste0('/dilithium/Data/Nanopore/sindbis/annot_regions.tsv')
 regions=read_tsv(gff, col_names=c('prot', 'start', 'end')) %>%
@@ -173,7 +176,6 @@ cov1=plotcov(covnorm %>% filter(dpi==1), regions)
 cov2=plotcov(covnorm %>% filter(dpi==2), regions)
 cov3=plotcov(covnorm %>% filter(dpi==3), regions)
 
-
 library(cowplot)
 covplotpdf=file.path(dbxdir, 'coverage_fig.pdf')
 pdf(covplotpdf, h=18, w=14)
@@ -183,5 +185,58 @@ dev.off()
 covplotpdf_num=file.path(dbxdir, 'coverage_fig_num.pdf')
 pdf(covplotpdf_num, h=19, w=16)
 plot_grid(cov1, cov2, cov3, ncol=1, align='v')
+dev.off()
+
+
+
+
+plotcov_log <- function(covinfo, regions) {
+    ##takes in covnorm like object
+    ##making colours work: https://stackoverflow.com/questions/58976114/how-do-i-have-multiple-lines-of-the-same-color-with-gg-plot
+    mapping=covinfo %>% distinct(cond,samp)
+    cols=brewer.pal(6, 'Set2')
+    cols=cols[1:n_distinct(mapping$cond)]
+    names(cols)=unique(mapping$cond)
+    plotcols=cols[mapping$cond]
+    names(plotcols)=mapping$samp
+
+    ##barheight=-.07*max(covinfo$sum_norm)
+    barheight=-.00025
+    regions$ymin=barheight
+    regions$ymax=0+.2*barheight
+    values=regions$colors
+    names(values)=regions$prot
+
+    covinfo=covinfo %>%
+        mutate(rep=as.character(rep))
+    
+    title=as.character(covinfo$dpi[1])
+    ##plot=ggplot(covinfo, mapping=aes(x=pos, y=sum_norm, col=samp)) +
+    plot=ggplot(covinfo, mapping=aes(x=pos, y=num_norm, col=samp, linetype=rep)) +
+        geom_line(size=1) +
+        ggtitle(paste0('Days post infection: ', title)) +
+        xlab('Position') +
+        ylab('Normalized Coverage') +
+        scale_colour_manual(values = plotcols) +
+        scale_y_log10() +
+        theme_bw()
+    return(plot)
+}
+
+logcov1=plotcov_log(covnorm %>% filter(dpi==1), regions)
+logcov2=plotcov_log(covnorm %>% filter(dpi==2), regions)
+logcov3=plotcov_log(covnorm %>% filter(dpi==3), regions)
+
+ymin=0
+ymax=.1
+logrect=ggplot(regions, aes(xmin=start, xmax=end, ymin=ymin, ymax=ymax, fill=prot, alpha=.3)) +
+    geom_rect() +
+    scale_fill_manual(values=regions$colors, labels=regions$prot) +
+    geom_text(data=regions, inherit.aes=FALSE, aes(x=start+(end-start)/2, y=ymin+(ymax-ymin)/2, label=prot, size=.2)) +
+    theme_void()
+
+covplotpdf_num=file.path(dbxdir, 'coverage_fig_lognum.pdf')
+pdf(covplotpdf_num, h=19, w=16)
+plot_grid(logcov1, logcov2, logcov3, logrect, ncol=1, align='v', rel_heights=c(1,1,1,.06))
 dev.off()
 

@@ -12,7 +12,7 @@ aligncounts=read_csv(aligncountscsv) %>%
     mutate(persinv=sinv/(sinv+rat)) %>%
     mutate(perrat=rat/(sinv+rat)) %>%
     mutate(pertotsinv=sinv/total) %>%
-    mutate(pertotsrat=rat/total) #%>%
+    mutate(pertotsrat=rat/total) %>%
     select(-sinv, -rat, -notrat, -notsinv, -total) %>%
     gather('species', 'value', -samp) %>%
     rowwise() %>%
@@ -68,6 +68,24 @@ pdf(ratiospdf, h=5, w=18)
 plot_grid(mockplot, day1plot, day2plot, day3plot, ncol=4, align='h')
 dev.off()
 
+sinvtots=aligncounts %>%
+    filter(species=='pertotsinv') %>%
+    mutate(treat=str_split(group, 'dpi')[[1]][1])
+sinvtots$treat[10]='uninfected'
+sinvtots$day[10]=0
+
+combinedpdf=file.path(dbxdir, 'cov', 'aligncounts_combined_fig.pdf')
+pdf(combinedpdf, h=5, w=12)
+ggplot(sinvtots, aes(x=day, y=value, colour=treat, fill=treat, alpha=.5)) +
+    geom_point(size=6) +
+    ggtitle('SINV reads') +
+    ylim(0,1) +
+    scale_fill_brewer(palette='Set2') +
+    scale_colour_brewer(palette='Set2') +
+    theme_bw() +
+    theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
+dev.off()
+    
 ###check singlet
 alignsingletcsv=file.path(dbxdir, 'cov', 'align_counts_singlet.csv')
 alignsinglet=read_csv(alignsingletcsv) %>%
@@ -85,3 +103,5 @@ ggplot(alignsinglet, aes(x=samp, y=value, colour=species, fill=species, alpha=.7
     scale_colour_brewer(palette='Set2') +
     theme_bw()
 dev.off()
+
+

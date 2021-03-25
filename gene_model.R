@@ -1,0 +1,117 @@
+library(tidyverse)
+library(RColorBrewer)
+library(cowplot)
+
+datadir='/dilithium/Data/Nanopore/sindbis/replicates'
+dbxdir='~/Dropbox/timplab_data/sindbis/replicates/cov'
+
+sampinfo=tibble(condition=c(rep('mAb', 9), rep('sinv',9), 'mock'),
+                dpi=c(rep(1,3), rep(2,3), rep(3,3), rep(1,3), rep(2,3), rep(3,3), 0),
+                rep=c(rep(c(1,2,3), 6), 0))
+
+##annotation
+gff=paste0('/dilithium/Data/Nanopore/sindbis/annot_regions.tsv')
+regions=read_tsv(gff, col_names=c('prot', 'start', 'end')) %>%
+    mutate(colors=brewer.pal(9, 'Set3'))
+ymin=-1
+ymax=1
+logrect=ggplot(regions, aes(xmin=start, xmax=end, ymin=ymin, ymax=ymax, fill=prot, alpha=.3)) +
+    geom_rect() +
+    scale_fill_manual(values=regions$colors, labels=regions$prot) +
+    geom_text(data=regions, inherit.aes=FALSE, aes(x=start+(end-start)/2, y=ymin+(ymax-ymin)/2, label=prot, size=.2)) +
+    theme_void() +
+    theme(strip.background = element_blank(),
+          strip.text.x = element_blank(),
+          legend.position = "none")
+
+
+
+plot_genemodel <- function(gff) {
+    ##plot gene model
+    plot=ggplot(gff, aes(xmin=start, xmax=end, ymin=-1, ymax=1, colour=transid, fill=transid, alpha=.3)) +
+        geom_rect() +
+        ggtitle(gff$samp[1]) +
+        scale_fill_brewer(palette='Set2') +
+        scale_colour_brewer(palette='Set2') +
+        facet_wrap(. ~ transid , ncol=1) +
+        theme_void() +
+        theme(strip.background = element_blank(),
+              strip.text.x = element_blank(),
+              legend.position = "none")
+    return(plot)
+}
+
+gffcols=c('refchr', 'tool', 'feat', 'start', 'end', 'score', 'strand', 'orf', 'attr')
+allgff=tibble(refchr=as.character(),
+              tool=as.character(),
+              feat=as.character(),
+              start=as.integer(),
+              end=as.integer(),
+              score=as.integer(),
+              strand=as.character(),
+              orf=as.character(),
+              transid=as.character(),
+              geneid=as.character())
+myplots=list()
+myplots[[1]]=logrect
+for (i in 1:dim(sampinfo)[1]) {
+    info=sampinfo[i,]
+    samp=paste0(info$condition, 'dpi', as.character(info$dpi), '_rep', as.character(info$rep))
+    gfffile=file.path(datadir, samp, 'stringtie', paste0(samp, '.splice.gff'))
+    if (file.exists(gfffile)){
+        gff=read_tsv(gfffile, col_names=gffcols, comment='#') %>%
+            rowwise() %>%
+            mutate(transid=strsplit(attr, '"', fixed=TRUE)[[1]][4]) %>%
+            mutate(geneid=strsplit(attr, '"', fixed=TRUE)[[1]][2]) %>%
+            select(-attr) %>%
+            filter(feat=='exon') %>%
+            mutate(samp=samp)
+            
+        myplots[[i+1]]=plot_genemodel(gff)
+        allgff=bind_rows(allgff, gff)
+    }
+}
+
+
+library(gridExtra)
+modelspdf=file.path(dbxdir, 'genemodels.pdf')
+pdf(modelspdf, h=21, w=6)
+do.call(grid.arrange, c(myplots, ncol = 1))
+dev.off()
+
+
+gffcols=c('refchr', 'tool', 'feat', 'start', 'end', 'score', 'strand', 'orf', 'attr')
+gffvanilla=tibble(refchr=as.character(),
+              tool=as.character(),
+              feat=as.character(),
+              start=as.integer(),
+              end=as.integer(),
+              score=as.integer(),
+              strand=as.character(),
+              orf=as.character(),
+              transid=as.character(),
+              geneid=as.character())
+myplots=list()
+myplots[[1]]=logrect
+for (i in 1:dim(sampinfo)[1]) {
+    info=sampinfo[i,]
+    samp=paste0(info$condition, 'dpi', as.character(info$dpi), '_rep', as.character(info$rep))
+    gfffile=file.path(datadir, samp, 'stringtie', paste0(samp, '.gff'))
+    if (file.exists(gfffile)){
+        gff=read_tsv(gfffile, col_names=gffcols, comment='#') %>%
+            rowwise() %>%
+            mutate(transid=strsplit(attr, '"', fixed=TRUE)[[1]][4]) %>%
+            mutate(geneid=strsplit(attr, '"', fixed=TRUE)[[1]][2]) %>%
+            select(-attr) %>%
+            filter(feat=='exon') %>%
+            mutate(samp=samp)
+            
+        myplots[[i+1]]=plot_genemodel(gff)
+        gffvanilla=bind_rows(gffvanilla, gff)
+    }
+}
+
+vanillapdf=file.path(dbxdir, 'genemodels_vanilla.pdf')
+pdf(vanillapdf, h=30, w=8)
+do.call(grid.arrange, c(myplots, ncol = 1))
+dev.off()

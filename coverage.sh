@@ -59,3 +59,70 @@ if [ $1 == count ] ; then
 	echo $i,$notsinv,$notrat,$total >> $dbxdir/cov/align_counts.csv
     done
 fi
+
+
+if [ $1 == splice_align ] ; then
+    for samp in $datadir/* ;
+    do
+	i=`basename $samp`
+	minimap2 -ax splice -uf -k14 --splice-flank=no -t 36 $ref $datadir/$i/fqs/$i.fq.gz | 
+	    samtools view -@ 36 -b | 
+	    samtools sort -@ 36 -o $datadir/$i/align/$i.splice.sorted.bam
+	samtools index $datadir/$i/align/$i.splice.sorted.bam
+    done
+fi
+     
+if [ $1 == splice_filt ] ; then
+    for samp in $datadir/* ;
+    do
+	i=`basename $samp`
+	samtools view -@ 36 -b -F 0x100 $datadir/$i/align/$i.splice.sorted.bam |
+	    samtools sort -@ 36 -o $datadir/$i/align/$i.splice.primary.sorted.bam
+
+    done
+fi
+
+if [ $1 == splice_cov ] ; then
+    for samp in $datadir/* ;
+    do
+	(i=`basename $samp`
+	
+        bedtools coverage -d -split \
+		 -a $ref.bed \
+		 -b $datadir/$i/align/$i.splice.sorted.bam > $datadir/$i/cov/$i.splice.cov
+	bedtools coverage -d -split \
+		 -a $ref.bed \
+		 -b $datadir/$i/align/$i.splice.primary.sorted.bam > $datadir/$i/cov/$i.splice.primary.cov ) &
+    done
+fi
+
+
+if [ $1 == stringtie ] ; then
+    for samp in $datadir/* ;
+    do
+	i=`basename $samp`
+	mkdir -p $datadir/$i/stringtie
+
+	stringtie \
+	    $datadir/$i/align/$i.splice.sorted.bam \
+	    -o $datadir/$i/stringtie/$i.splice.gff \
+	    -L \
+	    -p 36
+    done
+fi
+
+	
+	
+       
+if [ $1 == stringtie_vanilla ] ; then
+    for samp in $datadir/* ;
+    do
+        i=`basename $samp`
+        mkdir -p $datadir/$i/stringtie
+	stringtie \
+            $datadir/$i/align/$i.sorted.bam \
+            -o $datadir/$i/stringtie/$i.gff \
+            -L \
+            -p 36
+    done
+fi

@@ -26,7 +26,6 @@ cov=tibble(chr=as.character(),
            cond=as.character(),
            dpi=as.character(),
            rep=as.character())
-
 for (i in 1:dim(sampinfo)[1]) {
     info=sampinfo[i,]
     samp=paste0(info$condition, 'dpi', as.character(info$dpi), '_rep', as.character(info$rep))
@@ -41,13 +40,44 @@ for (i in 1:dim(sampinfo)[1]) {
         cov=rbind(cov, sampcov)
     }
 }
-
 covnorm=cov %>%
     group_by(samp) %>%
     mutate(sum_norm=cov/sum(cov)) %>%
     mutate(max_norm=cov/max(cov)) %>%
     rowwise() %>%
     mutate(num_norm=cov/aligncounts$sinv[aligncounts$samp==samp])
+
+##try with spliced
+splicecov=tibble(chr=as.character(),
+           start=as.numeric(),
+           end=as.numeric(),
+           pos=as.numeric(),
+           cov=as.numeric(),
+           samp=as.character(),
+           cond=as.character(),
+           dpi=as.character(),
+           rep=as.character())
+for (i in 1:dim(sampinfo)[1]) {
+    info=sampinfo[i,]
+    samp=paste0(info$condition, 'dpi', as.character(info$dpi), '_rep', as.character(info$rep))
+    covfile=file.path(datadir, samp, 'cov', paste0(samp, '.splice.cov'))
+
+    if (file.exists(covfile)) {
+        sampcov=read_tsv(covfile, col_names=cov_cnames) %>%
+            mutate(samp=samp) %>%
+            mutate(cond=paste0(info$condition, 'dpi', as.character(info$dpi))) %>%
+            mutate(dpi=info$dpi) %>%
+            mutate(rep=info$rep)
+        splicecov=rbind(splicecov, sampcov)
+    }
+}
+splicenorm=splicecov %>%
+    group_by(samp) %>%
+    mutate(sum_norm=cov/sum(cov)) %>%
+    mutate(max_norm=cov/max(cov)) %>%
+    rowwise() %>%
+    mutate(num_norm=cov/aligncounts$sinv[aligncounts$samp==samp])
+
 
 covplotfile=file.path(dbxdir, 'coverage.pdf')
 pdf(covplotfile, w=16, h=9)
@@ -105,6 +135,7 @@ for (i in 1:dim(sampinfo)[1]) {
         gencov=rbind(gencov, sampcov)
     }
 }
+
 
 
 
@@ -240,3 +271,11 @@ pdf(covplotpdf_num, h=19, w=16)
 plot_grid(logcov1, logcov2, logcov3, logrect, ncol=1, align='v', rel_heights=c(1,1,1,.06))
 dev.off()
 
+spliceplot1=plotcov_log(splicenorm %>% filter(dpi==1), regions)
+spliceplot2=plotcov_log(splicenorm %>% filter(dpi==2), regions)
+spliceplot3=plotcov_log(splicenorm %>% filter(dpi==3), regions)
+
+spliceplot=file.path(dbxdir, 'coverage_fig_lognum_splice.pdf')
+pdf(spliceplot, h=19, w=16)
+plot_grid(spliceplot1, spliceplot2, spliceplot3, logrect, ncol=1, align='v', rel_heights=c(1,1,1,.06))
+dev.off()

@@ -7,6 +7,8 @@ dbxdir='~/Dropbox/timplab_data/sindbis/replicates/cov'
 sampinfo=tibble(condition=c(rep('mAb', 9), rep('sinv',9), 'mock'),
                 dpi=c(rep(1,3), rep(2,3), rep(3,3), rep(1,3), rep(2,3), rep(3,3), 0),
                 rep=c(rep(c(1,2,3), 6), 0))
+sampinfo$dpi[19]=NA
+sampinfo$rep[19]=NA
 
 
 ##get in read count info
@@ -93,23 +95,51 @@ for (i in unique(covnorm$cond)) {
 }
 dev.off()
 
+
+
+
+
+
+####averaged across the replicates
 meancov=covnorm %>%
     group_by(cond, dpi, pos) %>%
-    summarise(avg_sumnorm=mean(sum_norm)) %>%
+    summarise(avg_numnorm=mean(num_norm)) %>%
+    rowwise() %>%
+    mutate(status=str_split(cond, 'dpi')[[1]][1]) %>%
+    mutate(dpi=as.character(dpi))
+excovnorm=covnorm %>%
+    filter(samp!='sinvdpi1_rep2')
+exmeancov=excovnorm %>%
+    group_by(cond, dpi, pos) %>%
+    summarise(avg_numnorm=mean(num_norm)) %>%
     rowwise() %>%
     mutate(status=str_split(cond, 'dpi')[[1]][1]) %>%
     mutate(dpi=as.character(dpi))
 
 avgcovplotfile=file.path(dbxdir, 'avg_coverage.pdf')
 pdf(avgcovplotfile, w=16, h=9)
-plot=ggplot(meancov, aes(x=pos, y=avg_sumnorm, colour=dpi, linetype=status)) +
+plot=ggplot(meancov, aes(x=pos, y=avg_numnorm, colour=status, linetype=dpi)) +
     geom_line() +
     ggtitle('Replicate Averages') +
     ylab('Normalized Coverage') +
     scale_colour_brewer(palette = 'Set2') +
+    scale_y_log10() +
     theme_bw()
 print(plot)
+explot=ggplot(exmeancov, aes(x=pos, y=avg_numnorm, colour=status, linetype=dpi)) +
+    geom_line() +
+    ggtitle('Replicate Averages, outlier excluded') +
+    ylab('Normalized Coverage') +
+    scale_colour_brewer(palette = 'Set2') +
+    scale_y_log10() +
+    theme_bw()
+print(explot)
 dev.off()
+
+
+
+
+
 
 
 gencov_cnames=c('chr','pos','cov')
@@ -278,4 +308,96 @@ spliceplot3=plotcov_log(splicenorm %>% filter(dpi==3), regions)
 spliceplot=file.path(dbxdir, 'coverage_fig_lognum_splice.pdf')
 pdf(spliceplot, h=19, w=16)
 plot_grid(spliceplot1, spliceplot2, spliceplot3, logrect, ncol=1, align='v', rel_heights=c(1,1,1,.06))
+dev.off()
+
+
+
+
+
+
+####plot read length distribution
+library(ShortRead)
+allreadlens=tibble(lengths=as.numeric(),
+                   samp=as.character())
+for (i in 1:dim(sampinfo)[1]) {
+    info=sampinfo[i,]
+    if (info$condition=='mock') {
+        samp='mock'
+    }else{
+        samp=paste0(info$condition, 'dpi', as.character(info$dpi), '_rep', as.character(info$rep))
+    }
+    print(samp)
+
+    fqfile=file.path(datadir, samp, 'fqs', paste0(samp, '.fq.gz'))
+    fqz=gzfile(fqfile, 'rt')
+    fq=readLines(fqz)
+    seqpos=seq(2, length(fq), 4)
+    
+    
+readlens=tibble(lengths=str_length(fq[seqpos])) %>%
+        mutate(samp=samp)
+    allreadlens=bind_rows(allreadlens, readlens)
+}
+
+interest='sinvdpi1_rep2'
+allreadlens=allreadlens %>%
+    mutate(status=samp==interest)
+
+
+pafcols=c('qname', 'qlen', 'qstart', 'qend', 'strand', 'rname', 'rlen', 'rstart', 'rend', 'matches', 'blocklen', 'mapq', 'one', 'two', 'three', 'four', 'five', 'six')
+allratlens=tibble(lengths=as.numeric(),
+                   samp=as.character())
+for (i in 1:dim(sampinfo)[1]) {
+    info=sampinfo[i,]
+    if (info$condition=='mock') {
+        samp='mock'
+    }else{
+        samp=paste0(info$condition, 'dpi', as.character(info$dpi), '_rep', as.character(info$rep))
+    }
+    print(samp)
+
+    paffile=file.path(datadir, samp, 'align', paste0(samp, '.rat.paf'))
+    lenspaf=read_tsv(paffile, col_names=pafcols) %>%
+        filter(mapq>30) %>%
+        group_by(qname) %>%
+        summarise(lengths=mean(qlen)) %>%
+        mutate(samp=samp) %>%
+        select(lengths, samp)
+    allratlens=bind_rows(allratlens, lenspaf)
+}
+allratlens=allratlens %>%
+    mutate(status=samp==interest)
+library(ggridges)
+qcdir='~/Dropbox/timplab_data/sindbis/replicates/qc'
+readlenpdf=file.path(qcdir, 'readlens.pdf')
+pdf(readlenpdf, w=15, h=8)
+plot=ggplot(allreadlens, aes(x=lengths, y=samp, colour=status, fill=status, alpha=.05)) +
+    geom_density_ridges() +
+    ggtitle('All Read Lengths Log scale') +
+    xlab('Read Length') +
+    scale_x_log10() +
+    theme_bw()
+print(plot)
+plot=ggplot(allreadlens, aes(x=lengths, y=samp, colour=status, fill=status, alpha=.05)) +
+    geom_density_ridges() +
+    ggtitle('All Read Lengths Linear scale') +
+    xlab('Read Length') +
+    xlim(0, 12500) +
+    theme_bw()
+print(plot)
+plot=ggplot(allratlens, aes(x=lengths, y=samp, colour=status, fill=status, alpha=.05)) +
+    geom_density_ridges() +
+    ggtitle('Rat Read Lengths Log scale') +
+    xlab('Read Length') +
+    scale_x_log10() +
+    theme_bw()
+print(plot)
+plot=ggplot(allratlens, aes(x=lengths, y=samp, colour=status, fill=status, alpha=.05)) +
+    geom_density_ridges() +
+    ggtitle('Rat Read Lengths Linear scale') +
+    xlim(0, 10000) +
+    xlab('Read Length') +
+    theme_bw()
+print(plot)
+
 dev.off()

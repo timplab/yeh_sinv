@@ -126,3 +126,14 @@ if [ $1 == stringtie_vanilla ] ; then
             -p 36
     done
 fi
+
+
+
+if [ $1 == pafalign ] ; then
+    for samp in $datadir/* ;
+    do
+        i=`basename $samp`
+        minimap2 -uf -k14 -t 36 $rat $datadir/$i/fqs/$i.fq.gz > \
+                 $datadir/$i/align/$i.rat.paf
+    done
+fi

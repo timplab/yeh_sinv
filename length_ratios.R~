@@ -1,0 +1,29 @@
+library(tidyverse)
+
+datadir='/mithril/Data/Nanopore/projects/sindbis/replicates'
+pafcols=c('qname', 'qlen', 'qstart', 'qend', 'starnd', 'rname', 'rlen', 'rstart', 'rend', 'matches', 'alen', 'mapq', 'type', 'cm', 's1', 's2', 'dv', 'rl')
+
+sampinfo=tibble(condition=c(rep('mAb', 9), rep('sinv',9), 'mock'),
+                dpi=c(rep(1,3), rep(2,3), rep(3,3), rep(1,3), rep(2,3), rep(3,3), 0),
+                rep=c(rep(c(1,2,3), 6), 0))
+sampinfo$dpi[19]=NA
+sampinfo$rep[19]=NA
+
+
+####find drop points using the cov data
+
+
+
+
+regions=tibble(name=c('dvg', 'subgenomic'), starts=(
+
+for (i in 1:dim(sampinfo)[1]) {
+    info=sampinfo[i,]
+    samp=paste0(info$condition, 'dpi', as.character(info$dpi), '_rep', as.character(info$rep))
+    paffile=file.path(datadir, samp, 'align', paste0(samp, '.paf'))
+
+    lenspaf=read_tsv(paffile, col_names=pafcols) %>%
+        select(qname, qlen, rname, rlen, rstart, rend, mapq, type)
+    full=lenspaf %>%
+        filter(qlen>11000)
+    

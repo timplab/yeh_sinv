@@ -1,7 +1,12 @@
 library(tidyverse)
 library(RColorBrewer)
+library(ggnewscale)
+library(cowplot)
+library(ShortRead)
+library(ggridges)
 
-datadir='/dilithium/Data/Nanopore/sindbis/replicates'
+##datadir='/dilithium/Data/Nanopore/sindbis/replicates'
+datadir='/mithril/Data/Nanopore/projects/sindbis/replicates'
 dbxdir='~/Dropbox/timplab_data/sindbis/replicates/cov'
 
 sampinfo=tibble(condition=c(rep('mAb', 9), rep('sinv',9), 'mock'),
@@ -9,6 +14,11 @@ sampinfo=tibble(condition=c(rep('mAb', 9), rep('sinv',9), 'mock'),
                 rep=c(rep(c(1,2,3), 6), 0))
 sampinfo$dpi[19]=NA
 sampinfo$rep[19]=NA
+
+##annotation
+gff=paste0('/dilithium/Data/Nanopore/sindbis/annot_regions.tsv')
+regions=read_tsv(gff, col_names=c('prot', 'start', 'end')) %>%
+    mutate(colors=brewer.pal(9, 'Set3'))
 
 
 ##get in read count info
@@ -97,9 +107,6 @@ dev.off()
 
 
 
-
-
-
 ####averaged across the replicates
 meancov=covnorm %>%
     group_by(cond, dpi, pos) %>%
@@ -118,14 +125,22 @@ exmeancov=excovnorm %>%
 
 avgcovplotfile=file.path(dbxdir, 'avg_coverage.pdf')
 pdf(avgcovplotfile, w=16, h=9)
+ymin=.0001
+ymax=.00015
 plot=ggplot(meancov, aes(x=pos, y=avg_numnorm, colour=status, linetype=dpi)) +
-    geom_line() +
+    geom_line(size=1) +
     ggtitle('Replicate Averages') +
     ylab('Normalized Coverage') +
     scale_colour_brewer(palette = 'Set2') +
-    scale_y_log10() +
-    theme_bw()
+    scale_y_log10(limits=c(1e-4,1)) +
+    new_scale_color() +
+    geom_rect(data=regions, inherit.aes=FALSE, aes(xmin=start, xmax=end, ymin=ymin, ymax=ymax, fill=prot), alpha=.3) +
+    geom_text(data=regions, inherit.aes=FALSE, aes(x=start+(end-start)/2, y=ymin+(ymax-ymin)/2, label=prot, size=.2)) +
+    scale_fill_manual(values=regions$colors, labels=regions$prot) +
+    theme_bw() +
+    theme(panel.grid.minor = element_blank())
 print(plot)
+
 explot=ggplot(exmeancov, aes(x=pos, y=avg_numnorm, colour=status, linetype=dpi)) +
     geom_line() +
     ggtitle('Replicate Averages, outlier excluded') +
@@ -135,8 +150,6 @@ explot=ggplot(exmeancov, aes(x=pos, y=avg_numnorm, colour=status, linetype=dpi))
     theme_bw()
 print(explot)
 dev.off()
-
-
 
 
 
@@ -193,12 +206,8 @@ dev.off()
 
 
 
-##annotation
-gff=paste0('/dilithium/Data/Nanopore/sindbis/annot_regions.tsv')
-regions=read_tsv(gff, col_names=c('prot', 'start', 'end')) %>%
-    mutate(colors=brewer.pal(9, 'Set3'))
 
-library(ggnewscale)
+
 ##make figure
 plotcov <- function(covinfo, regions) {
     ##takes in covnorm like object
@@ -237,7 +246,7 @@ cov1=plotcov(covnorm %>% filter(dpi==1), regions)
 cov2=plotcov(covnorm %>% filter(dpi==2), regions)
 cov3=plotcov(covnorm %>% filter(dpi==3), regions)
 
-library(cowplot)
+
 covplotpdf=file.path(dbxdir, 'coverage_fig.pdf')
 pdf(covplotpdf, h=18, w=14)
 plot_grid(cov1, cov2, cov3, ncol=1, align='v')
@@ -316,7 +325,7 @@ dev.off()
 
 
 ####plot read length distribution
-library(ShortRead)
+
 allreadlens=tibble(lengths=as.numeric(),
                    samp=as.character())
 for (i in 1:dim(sampinfo)[1]) {
@@ -367,7 +376,7 @@ for (i in 1:dim(sampinfo)[1]) {
 }
 allratlens=allratlens %>%
     mutate(status=samp==interest)
-library(ggridges)
+
 qcdir='~/Dropbox/timplab_data/sindbis/replicates/qc'
 readlenpdf=file.path(qcdir, 'readlens.pdf')
 pdf(readlenpdf, w=15, h=8)

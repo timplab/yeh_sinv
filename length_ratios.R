@@ -1,5 +1,6 @@
 library(tidyverse)
 library(GenomicRanges)
+library(cowplot)
 
 datadir='/mithril/Data/Nanopore/projects/sindbis/replicates'
 dbxdir='~/Dropbox/timplab_data/sindbis/replicates/cov'
@@ -65,35 +66,60 @@ for (i in 1:(dim(sampinfo)[1]-1)) {
     ratios=bind_rows(ratios, ratioinfo)
 }
 
+ratios$dpi=as.character(ratios$dpi)
+
 speciespdf=file.path(dbxdir, 'rna_species_ratios.pdf')
-pdf(speciespdf, h=5, w=12)
-ggplot(ratios, aes(x=dpi, y=dvg, colour=condition, fill=condition, alpha=.5)) +
+pdf(speciespdf, h=5, w=13)
+dvgplot=ggplot(ratios, aes(x=dpi, y=dvg, colour=condition, fill=condition, alpha=.2)) +
     geom_point(size=6) +
     ggtitle('DVG') +
     scale_fill_brewer(palette='Set2') +
     scale_colour_brewer(palette='Set2') +
     theme_bw() +
     theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
-ggplot(ratios, aes(x=dpi, y=subdvg, colour=condition, fill=condition, alpha=.5)) +
+subdvgplot=ggplot(ratios, aes(x=dpi, y=subdvg, colour=condition, fill=condition, alpha=.2)) +
     geom_point(size=6) +
     ggtitle('Sub DVG') +
     scale_fill_brewer(palette='Set2') +
     scale_colour_brewer(palette='Set2') +
     theme_bw() +
     theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
-ggplot(ratios, aes(x=dpi, y=subgen, colour=condition, fill=condition, alpha=.5)) +
+subgenplot=ggplot(ratios, aes(x=dpi, y=subgen, colour=condition, fill=condition, alpha=.2)) +
     geom_point(size=6) +
     ggtitle('Subgenomic') +
     scale_fill_brewer(palette='Set2') +
     scale_colour_brewer(palette='Set2') +
     theme_bw() +
     theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
-dev.off()
+plot_grid(dvgplot, subdvgplot, subgenplot, ncol=3)
 
+dvgplot=ggplot(ratios, aes(x=dpi, y=dvg, colour=condition, fill=condition, alpha=.2)) +
+    geom_jitter(size=6, width=.05) +
+    ggtitle('DVG') +
+    scale_fill_brewer(palette='Set2') +
+    scale_colour_brewer(palette='Set2') +
+    theme_bw() +
+    theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
+subdvgplot=ggplot(ratios, aes(x=dpi, y=subdvg, colour=condition, fill=condition, alpha=.2)) +
+    geom_jitter(size=6, width=.05) +
+    ggtitle('Sub DVG') +
+    scale_fill_brewer(palette='Set2') +
+    scale_colour_brewer(palette='Set2') +
+    theme_bw() +
+    theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
+subgenplot=ggplot(ratios, aes(x=dpi, y=subgen, colour=condition, fill=condition, alpha=.2)) +
+    geom_jitter(size=6, width=.05) +
+    ggtitle('Subgenomic') +
+    scale_fill_brewer(palette='Set2') +
+    scale_colour_brewer(palette='Set2') +
+    theme_bw() +
+    theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
+plot_grid(dvgplot, subdvgplot, subgenplot, ncol=3)
+dev.off()
 
 speciespdf=file.path(dbxdir, 'rna_species_ratios_nooutlier.pdf')
 pdf(speciespdf, h=5, w=12)
-ggplot(ratios, aes(x=dpi, y=dvg, colour=condition, fill=condition, alpha=.5)) +
+ggplot(ratios, aes(x=dpi, y=dvg, colour=condition, fill=condition, alpha=.2)) +
     geom_point(size=6) +
     ggtitle('DVG') +
     ylim(0,1) +
@@ -101,7 +127,7 @@ ggplot(ratios, aes(x=dpi, y=dvg, colour=condition, fill=condition, alpha=.5)) +
     scale_colour_brewer(palette='Set2') +
     theme_bw() +
     theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
-ggplot(ratios, aes(x=dpi, y=subdvg, colour=condition, fill=condition, alpha=.5)) +
+ggplot(ratios, aes(x=dpi, y=subdvg, colour=condition, fill=condition, alpha=.2)) +
     geom_point(size=6) +
     ggtitle('Sub DVG') +
     ylim(0,4) +
@@ -109,7 +135,7 @@ ggplot(ratios, aes(x=dpi, y=subdvg, colour=condition, fill=condition, alpha=.5))
     scale_colour_brewer(palette='Set2') +
     theme_bw() +
     theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
-ggplot(ratios, aes(x=dpi, y=subgen, colour=condition, fill=condition, alpha=.5)) +
+ggplot(ratios, aes(x=dpi, y=subgen, colour=condition, fill=condition, alpha=.2)) +
     geom_point(size=6) +
     ggtitle('Subgenomic') +
     ylim(0,250) +

@@ -205,29 +205,41 @@ for (i in 1:(dim(sampinfo)[1]-1)) {
 ratios$dpi=as.character(ratios$dpi)
 speciesyieldpdf=file.path(dbxdir, 'rna_species_ratios_numreads.pdf')
 pdf(speciesyieldpdf, h=5, w=17)
-fullplot=ggplot(ratios, aes(x=dpi, y=full, colour=condition, fill=condition, alpha=.2)) +
+fullplot=ggplot(ratios, aes(x=dpi, y=full, colour=condition, fill=condition, alpha=.1)) +
     geom_jitter(size=6, width=.05) +
     ggtitle('Genomic RNA') +
+    stat_summary(fun.y='mean', geom='crossbar', 
+                 mapping=aes(ymin=..y.., ymax=..y..), width=.5,
+                 show.legend = FALSE) +
     scale_fill_brewer(palette='Set2') +
     scale_colour_brewer(palette='Set2') +
     theme_bw() +
     theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
-dvgplot=ggplot(ratios, aes(x=dpi, y=dvg, colour=condition, fill=condition, alpha=.2)) +
+dvgplot=ggplot(ratios, aes(x=dpi, y=dvg, colour=condition, fill=condition, alpha=.1)) +
     geom_jitter(size=6, width=.05) +
+    stat_summary(fun.y='mean', geom='crossbar', 
+                 mapping=aes(ymin=..y.., ymax=..y..), width=.5,
+                 show.legend = FALSE) +
     ggtitle('DVG') +
     scale_fill_brewer(palette='Set2') +
     scale_colour_brewer(palette='Set2') +
     theme_bw() +
     theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
-subdvgplot=ggplot(ratios, aes(x=dpi, y=subdvg, colour=condition, fill=condition, alpha=.2)) +
+subdvgplot=ggplot(ratios, aes(x=dpi, y=subdvg, colour=condition, fill=condition, alpha=.1)) +
     geom_jitter(size=6, width=.05) +
+    stat_summary(fun.y='mean', geom='crossbar', 
+                 mapping=aes(ymin=..y.., ymax=..y..), width=.5,
+                 show.legend = FALSE) +
     ggtitle('Sub DVG') +
     scale_fill_brewer(palette='Set2') +
     scale_colour_brewer(palette='Set2') +
     theme_bw() +
     theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
-subgenplot=ggplot(ratios, aes(x=dpi, y=subgen, colour=condition, fill=condition, alpha=.2)) +
+subgenplot=ggplot(ratios, aes(x=dpi, y=subgen, colour=condition, fill=condition, alpha=.1)) +
     geom_jitter(size=6, width=.05) +
+    stat_summary(fun.y='mean', geom='crossbar', 
+                 mapping=aes(ymin=..y.., ymax=..y..), width=.5,
+                 show.legend = FALSE) +
     ggtitle('Subgenomic') +
     scale_fill_brewer(palette='Set2') +
     scale_colour_brewer(palette='Set2') +
@@ -236,7 +248,8 @@ subgenplot=ggplot(ratios, aes(x=dpi, y=subgen, colour=condition, fill=condition,
 plot_grid(fullplot, dvgplot, subdvgplot, subgenplot, ncol=4)
 dev.off()
 
-
+ratioscsv=file.path(dbxdir, 'ratios.csv')
+write_csv(ratios, ratioscsv)
 
 
 

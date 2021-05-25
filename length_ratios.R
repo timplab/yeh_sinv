@@ -31,6 +31,7 @@ ratios=tibble(name=as.character(),
               subdvg=as.numeric(),
               condition=as.character(),
               dpi=as.numeric())
+
 for (i in 1:(dim(sampinfo)[1]-1)) {
     info=sampinfo[i,]
     samp=paste0(info$condition, 'dpi', as.character(info$dpi), '_rep', as.character(info$rep))

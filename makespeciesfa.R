@@ -1,0 +1,30 @@
+library(tidyverse)
+library(Biostrings)
+library(GenomicRanges)
+library(BSgenome)
+
+datadir='/mithril/Data/Nanopore/projects/sindbis/replicates'
+fa='/mithril/Data/Nanopore/projects/sindbis/refs/sindbis_jane.fasta'
+
+gff=paste0('/dilithium/Data/Nanopore/sindbis/annot_regions.tsv')
+regions=read_tsv(gff, col_names=c('prot', 'start', 'end'))
+
+species=tibble(name=c('genomic', 'subgenomic', 'dvg', 'subdvg'),
+               start=c(1, 7598, 60, 1),
+               end=c(11703, 11703, 1755, 900))
+
+coords=IRanges(start=species$start, end=species$end)
+speciesranges=GRanges(seqnames=species$name,
+                      ranges=coords)
+
+ref=readDNAStringSet(fa)
+name=names(ref)
+refranges=GRanges(seqnames=name, coords, strand=c('+', '+', '+', '+'))
+
+sinv=getSeq(ref, refranges)
+names(sinv)=species$name
+
+speciesfa='/mithril/Data/Nanopore/projects/sindbis/refs/sindbis_jane_species.fasta'
+writeXStringSet(sinv, speciesfa, format='fasta')
+
+

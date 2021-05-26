@@ -1,6 +1,8 @@
 library(tidyverse)
 library(cowplot)
 
+
+##same species ratio analysis as length_ratios.R but based on alignment to transcriptome
 datadir='/mithril/Data/Nanopore/projects/sindbis/replicates'
 dbxdir='~/Dropbox/timplab_data/sindbis/replicates/cov'
 pafcols=c('qname', 'qlen', 'qstart', 'qend', 'starnd', 'rname', 'rlen', 'rstart', 'rend', 'matches', 'alen', 'mapq', 'type', 'cm', 's1', 's2', 'dv', 'rl')
@@ -101,3 +103,31 @@ subdvgplot=ggplot(ratios, aes(x=dpi, y=persubdvg, colour=condition, fill=conditi
     theme(panel.grid.minor.x=element_blank(), panel.grid.minor.y=element_blank())
 plot_grid(fullplot, subplot, dvgplot, subdvgplot, ncol=4)
 dev.off()
+
+
+
+####genomic vs subgenomic ratios
+highcountscsv=file.path(dbxdir, 'ratio_counts.csv')
+highcounts=read_csv(highcountscsv)
+high_est=highcounts %>%
+    mutate(ratio=subgen/full) %>%
+    filter(dpi==2)
+
+low_est=readcounts %>%
+    mutate(ratio=subgenomic/genomic)
+bardata=low_est %>%
+    group_by(condition, dpi) %>%
+    summarise(meanratio=mean(ratio), sdratio=sd(ratio))
+    
+bars2dpipdf=file.path(dbxdir, 'ratio_counts.pdf')
+pdf(bars2dpipdf)
+ggplot(bardata, aes(x=dpi, y=meanratio, colour=condition, fill=condition, alpha=.5)) +
+    geom_bar(stat='identity', position=position_dodge()) +
+    geom_errorbar(aes(ymin=meanratio, ymax=meanratio+sdratio), position=position_dodge(.9), width=.2) +
+    ggtitle('subgenomic/genomic') +
+    theme_bw()
+dev.off()
+
+low_test=low_est %>%
+    filter(dpi=='2')
+a=t.test(low_test$ratio[1:3], low_test$ratio[4:6])
